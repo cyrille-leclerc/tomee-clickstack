@@ -1,0 +1,93 @@
+# -*-shell-script-*-
+set -x
+
+find_java() {
+    set +u
+    java_version=${java_java_version-"1.6"}
+    set -u
+    case "$java_version" in
+	"1.6")echo "/opt/java6/bin/java";;
+	"1.7") echo "/opt/java7/bin/java";;
+	"1.8") echo "/opt/java8/jre/bin/java";;
+	"system") which java;;
+        *)
+            echo "Unsupported java version $java_version" 1>&2
+            exit 1
+            ;;
+    esac
+}
+
+java=$(find_java)
+echo "Using $java"
+
+CATALINA_BASE=$app_dir/server
+
+install_app() {
+    tomee_dir=$app_dir/tomee15
+    cp -rf $plugin_dir/tomee15 $tomee_dir
+    chmod +x $tomee_dir/bin/catalina.sh
+
+    mkdir -p -m 770 $CATALINA_BASE
+    cp -rf $plugin_dir/server/* $CATALINA_BASE
+    mkdir -p -m 770 $CATALINA_BASE/webapps/ROOT
+
+    echo "Creating TomEE working directory"
+    mkdir -p -m 770 $CATALINA_BASE/server/work/Catalina/localhost/_
+
+    if [ -f "$pkg_dir/../app.zip" ]; then
+        #this is an archive-based app deploy
+        unzip -d $CATALINA_BASE/webapps/ROOT $pkg_dir/../app.zip
+    else
+        #this is a local development app deploy
+        cp -a $pkg_dir/ $CATALINA_BASE/webapps/ROOT
+        rm $CATALINA_BASE/webapps/ROOT/.genapp/metadata.json
+    fi
+}
+
+create_app_skel() {
+    chmod 770 $app_dir
+    mkdir -m 770 $app_dir/tmp
+    mkdir -m 770 $app_dir/log
+    mkdir -m 770 $app_dir/work
+    ln -s $log_dir/current $app_dir/log/current
+}
+
+write_config() {
+    config="$control_dir/config"
+    echo "app_dir=$app_dir" >> $config
+    echo "port=$app_port" >> $config
+    echo "java=$java" >> $config
+    echo "CATALINA_OPTS=-Dport.http=$app_port" >> $config
+    echo "CATALINA_HOME=$app_dir/tomee15" >> $config
+    echo "CATALINA_BASE=$CATALINA_BASE" >> $config
+    echo "app_tmp=$app_dir/tmp" >> $config
+
+    set +u
+    echo "environment=$staxcat_appserver_env" >> $config
+    set -u
+}
+
+write_java_opts() {
+    java_opts_core="$control_dir/java-opts-10-core"
+    set +u
+    resolved_opts=$(eval "echo $tomee15_opts")
+    set -u
+    echo $resolved_opts > $java_opts_core
+}
+
+write_appserver_xml() {
+    echo "placeholder"
+}
+
+write_control() {
+    install -m 550 $plugin_dir/control/start $control_dir
+    install -m 550 $plugin_dir/control/stats-appstat $control_dir
+}
+
+create_app_skel
+install_app
+write_config
+write_java_opts
+write_appserver_xml
+write_control
+

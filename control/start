@@ -1,0 +1,46 @@
+#!/bin/sh
+set -e
+set -u
+
+control_dir="$(dirname $0)"
+. $control_dir/config
+
+tomee_bootstrap_jar=$CATALINA_HOME/bin/bootstrap.jar
+tomee_juli_jar=$CATALINA_HOME/bin/tomcat-juli.jar
+tomee_bootstrap_class=org.apache.catalina.startup.Bootstrap
+
+java_opts=""
+for f in `ls $control_dir/java-opts-* | sort`; do
+    java_opts="$java_opts `cat $f`"
+done
+
+export CATALINA_OPTS=$CATALINA_OPTS
+
+if [ -r "$CATALINA_HOME"/lib/openejb-javaagent.jar ]; then
+  java_opts=""-javaagent:$CATALINA_HOME/lib/openejb-javaagent.jar" $java_opts"
+fi
+
+echo CATALINA_OPTS=$CATALINA_OPTS
+echo $app_dir/tomee7/bin/catalina.sh run
+
+#exec $app_dir/tomee7/bin/catalina.sh run
+
+echo exec $java \
+    -cp $tomee_bootstrap_jar:$tomee_juli_jar \
+    $java_opts \
+    $CATALINA_OPTS \
+    -Dcatalina.home=$CATALINA_HOME \
+    -Dcatalina.base=$CATALINA_BASE \
+    -Djava.io.tmpdir=$app_tmp \
+    $tomee_bootstrap_class start
+
+
+exec $java \
+    -cp $tomee_bootstrap_jar:$tomee_juli_jar \
+    $java_opts \
+    $CATALINA_OPTS \
+    -Dcatalina.home=$CATALINA_HOME \
+    -Dcatalina.base=$CATALINA_BASE \
+    -Djava.io.tmpdir=$app_tmp \
+    $tomee_bootstrap_class start
+
