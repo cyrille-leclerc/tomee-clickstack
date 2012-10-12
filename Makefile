@@ -16,12 +16,13 @@ compile:
 	   echo "Downloading TomEE..."; \
 	   curl -o "$(build_dir)/tomee.zip" $(tomee_url) ; \
 	   unzip -d "$(build_dir)" "$(build_dir)/tomee.zip"; \
-	   mv "$(build_dir)/apache-tomee-*" "./tomee15"; \
-	   rm -rf "./tomee15/webapps/{host-manager,manager,ROOT,docs}"; \
+	   mv "$(build_dir)/apache-tomee-"* "./tomee15"; \
+	   rm -rf "./tomee15/webapps/"*; \
 	fi
 
 package: compile
-	jar cvf "$(build_dir)/tomee15-plugin.zip" control server setup tomee15
+	rm -f "$(build_dir)/tomee15-plugin.zip"
+	zip -9 -r "$(build_dir)/tomee15-plugin.zip" control server setup tomee15
 
 clean:
 	rm -rf "$(build_dir)"
