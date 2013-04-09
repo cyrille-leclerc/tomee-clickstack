@@ -23,7 +23,7 @@ After successful build tomee15-plugin.zip is created and can be uploaded to the 
 
 ## Deploy 
 
-    $ bees app:deploy -a APP_ID -t tomcat7  build/hello.war
+    $ bees app:deploy -a APP_ID -t tomee15  build/hello.war
 
 
 ## TODOs
